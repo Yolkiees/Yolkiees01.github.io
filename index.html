@@ -19,12 +19,13 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #E8E4DE; border-radius: 99px; }
     input::placeholder { color: #C8C5C0; }
+
     #install-banner { display:none; position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#1C1C1A; color:#fff; border-radius:12px; padding:12px 18px; font-size:12px; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,.25); z-index:9999; align-items:center; gap:12px; max-width:340px; width:calc(100% - 32px); }
     #install-banner.show { display:flex; }
     #install-btn { background:#E8526A; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; cursor:pointer; }
     #dismiss-btn { background:none; border:none; color:#ffffff66; cursor:pointer; font-size:16px; margin-left:auto; }
 
-    /* Scanner overlay */
+    /* Scanner */
     #scanner-overlay { display:none; position:fixed; inset:0; background:#000; z-index:9000; flex-direction:column; }
     #scanner-overlay.show { display:flex; }
     #scanner-video { width:100%; height:100%; object-fit:cover; }
@@ -41,31 +42,41 @@
     #scan-result { position:absolute; bottom:22%; left:50%; transform:translateX(-50%); background:#fff; border-radius:10px; padding:10px 18px; font-size:13px; font-weight:600; color:#1C1C1A; white-space:nowrap; opacity:0; transition:opacity .3s; }
     #scan-result.show { opacity:1; }
 
-    /* Modal backdrop */
-    .modal-backdrop { position:fixed; inset:0; background:rgba(28,28,26,.5); z-index:8000; display:flex; align-items:flex-end; justify-content:center; padding:0; animation:fadeIn .2s; }
+    /* Modals */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(28,28,26,.5); z-index:8000; display:flex; align-items:flex-end; justify-content:center; animation:fadeIn .2s; }
     .modal-sheet { background:#FDFAF6; border-radius:20px 20px 0 0; width:100%; max-width:520px; max-height:92vh; overflow-y:auto; padding:20px 18px max(env(safe-area-inset-bottom,0px),24px); animation:slideUp .25s ease; }
+    .modal-center { position:fixed; inset:0; background:rgba(28,28,26,.5); z-index:8500; display:flex; align-items:center; justify-content:center; padding:20px; animation:fadeIn .2s; }
+    .modal-card { background:#FDFAF6; border-radius:18px; width:100%; max-width:400px; padding:24px; animation:popIn .2s ease; }
     @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes popIn { from{transform:scale(.95);opacity:0} to{transform:scale(1);opacity:1} }
     .modal-handle { width:36px; height:4px; background:#E8E4DE; border-radius:99px; margin:0 auto 16px; }
+
+    /* Calendar */
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+    .cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:12px; cursor:pointer; transition:all .12s; border:none; background:transparent; }
+    .cal-day:hover { background:#F7F3EE; }
+    .cal-day.has-data { font-weight:700; }
+    .cal-day.selected { background:#E8526A !important; color:#fff !important; }
+    .cal-day.today-cell { border:1.5px solid #E8526A; color:#E8526A; font-weight:700; }
+    .cal-day.ended { background:#EBF2E8; color:#6B8F5E; }
+    .cal-day.other-month { opacity:.3; cursor:default; }
+    .cal-day:disabled { opacity:.25; cursor:default; }
+
+    /* End Day card animation */
+    @keyframes confettiDrop { 0%{opacity:0;transform:translateY(-10px)} 60%{opacity:1} 100%{opacity:1;transform:translateY(0)} }
   </style>
   <script>
-    const manifestData = { name:"Food Diary 🍓🍵", short_name:"Food Diary", start_url:"./food-diary.html", display:"standalone", background_color:"#FDFAF6", theme_color:"#FDFAF6", orientation:"portrait", icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23FDFAF6'/%3E%3Ctext y='340' x='90' font-size='300'%3E🍓%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}] };
-    const blob = new Blob([JSON.stringify(manifestData)],{type:'application/json'});
-    document.write(`<link rel="manifest" href="${URL.createObjectURL(blob)}">`);
+    const md={name:"Food Diary 🍓🍵",short_name:"Food Diary",start_url:"./index.html",display:"standalone",background_color:"#FDFAF6",theme_color:"#FDFAF6",orientation:"portrait",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23FDFAF6'/%3E%3Ctext y='340' x='90' font-size='300'%3E🍓%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+    document.write(`<link rel="manifest" href="${URL.createObjectURL(new Blob([JSON.stringify(md)],{type:'application/json'}))}">`);
   </script>
 </head>
 <body>
 <div id="root"></div>
 <div id="install-banner"><span>📲 Add to home screen</span><button id="install-btn">Install</button><button id="dismiss-btn">✕</button></div>
-
-<!-- Barcode Scanner Overlay -->
 <div id="scanner-overlay">
   <video id="scanner-video" autoplay playsinline muted></video>
-  <div class="scan-frame">
-    <div class="scan-line"></div>
-    <div class="scan-corner tl"></div><div class="scan-corner tr"></div>
-    <div class="scan-corner bl"></div><div class="scan-corner br"></div>
-  </div>
+  <div class="scan-frame"><div class="scan-line"></div><div class="scan-corner tl"></div><div class="scan-corner tr"></div><div class="scan-corner bl"></div><div class="scan-corner br"></div></div>
   <button id="scan-close">✕</button>
   <div id="scan-hint">Point camera at barcode</div>
   <div id="scan-result"></div>
@@ -74,13 +85,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<!-- ZXing barcode library -->
 <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <script type="text/babel">
-const { useState, useRef, useEffect, useCallback } = React;
+const { useState, useRef, useEffect } = React;
 
-// ── Theme ─────────────────────────────────────────────────────
 const T = {
   strawberry:"#E8526A", strawberryLight:"#FDE8EB", strawberryMid:"#F4A0AE",
   matcha:"#6B8F5E", matchaLight:"#EBF2E8", matchaMid:"#A8C4A0",
@@ -96,37 +106,100 @@ const MEAL_META = {
   Snack:    {icon:"◇",color:T.inkLight,  light:T.paper},
 };
 const QUICK_FOODS = ["Nasi lemak","Roti canai","Teh tarik","Nasi goreng","Curry laksa","Milo ais","Char kway teow","Cendol","Bak kut teh","Apam balik"];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
-// ── Storage helpers ───────────────────────────────────────────
-function ls(key, fallback={}) { try { return JSON.parse(localStorage.getItem(key)||"null") ?? fallback; } catch { return fallback; } }
-function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
-
+function ls(k,fb) { try{return JSON.parse(localStorage.getItem(k)||"null")??fb;}catch{return fb;} }
+function lsSet(k,v) { try{localStorage.setItem(k,JSON.stringify(v));}catch{} }
 function toDateKey(d) { return d.toISOString().slice(0,10); }
 function fmtLong(dk) { return new Date(dk+"T00:00:00").toLocaleDateString("en-MY",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
 function fmtShort(dk) { return new Date(dk+"T00:00:00").toLocaleDateString("en-MY",{day:"numeric",month:"short"}); }
 function isToday(dk) { return dk===toDateKey(new Date()); }
 
-// ── AI fetch ──────────────────────────────────────────────────
-async function fetchNutrition(food, amount, apiKey) {
-  const res = await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},
-    body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:300, messages:[{role:"user",content:`You are a Malaysian nutrition expert. Estimate nutrition for: "${amount} of ${food}".
-Return ONLY JSON (no markdown): {"calories":<int>,"protein":<float>,"fiber":<float>,"note":"<optional short note>"}
-Adjust for Malaysian portions. Honour modifiers like "small", "not too thick", etc.`}] })
-  });
-  const d = await res.json();
-  const text = d.content?.map(b=>b.text||"").join("")||"";
-  try { const m=text.replace(/```json[\s\S]*?```/g,s=>s.replace(/```json|```/g,"")).match(/\{[\s\S]*\}/); if(m) return JSON.parse(m[0]); } catch {}
+// ── Supabase client ───────────────────────────────────────────
+const SB_URL = "https://tttlovllcwxgaopajldf.supabase.co";
+const SB_KEY = "sb_publishable_cbZ8MDddkJoCa2Uh_mwKKg_HF9fsbzt";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// ── Supabase sync helpers ─────────────────────────────────────
+async function sbPushEntry(userId, dateKey, entry) {
+  try {
+    await sb.from("diary").upsert({
+      id: String(entry.id), user_id: userId, date_key: dateKey,
+      meal: entry.meal, food: entry.food, amount: entry.amount,
+      calories: entry.calories, protein: entry.protein, fiber: entry.fiber
+    });
+  } catch(e) { console.warn("sync push entry failed", e); }
+}
+
+async function sbDeleteEntry(userId, entryId) {
+  try { await sb.from("diary").delete().eq("id", String(entryId)).eq("user_id", userId); }
+  catch(e) { console.warn("sync delete failed", e); }
+}
+
+async function sbPushDayMeta(userId, dateKey, ended) {
+  try {
+    await sb.from("day_meta").upsert({ user_id: userId, date_key: dateKey, ended });
+  } catch(e) { console.warn("sync day_meta failed", e); }
+}
+
+async function sbPushLibraryItem(userId, item) {
+  try {
+    await sb.from("food_library").upsert({
+      id: String(item.id), user_id: userId, name: item.name,
+      barcode: item.barcode||null, cal100: item.cal100,
+      pro100: item.pro100, fib100: item.fib100,
+      photo: item.photo||null
+    });
+  } catch(e) { console.warn("sync library push failed", e); }
+}
+
+async function sbDeleteLibraryItem(userId, itemId) {
+  try { await sb.from("food_library").delete().eq("id", String(itemId)).eq("user_id", userId); }
+  catch(e) { console.warn("sync library delete failed", e); }
+}
+
+async function sbFetchAll(userId) {
+  try {
+    const [d1, d2, d3] = await Promise.all([
+      sb.from("diary").select("*").eq("user_id", userId),
+      sb.from("day_meta").select("*").eq("user_id", userId),
+      sb.from("food_library").select("*").eq("user_id", userId),
+    ]);
+    // Build allData from diary rows
+    const allData = {};
+    (d1.data||[]).forEach(row => {
+      if(!allData[row.date_key]) allData[row.date_key] = [];
+      allData[row.date_key].push({ id: row.id, meal: row.meal, food: row.food, amount: row.amount, calories: Number(row.calories), protein: Number(row.protein), fiber: Number(row.fiber) });
+    });
+    // Build dayMeta
+    const dayMeta = {};
+    (d2.data||[]).forEach(row => { dayMeta[row.date_key] = { ended: row.ended }; });
+    // Build library
+    const library = (d3.data||[]).map(row => ({
+      id: row.id, name: row.name, barcode: row.barcode, cal100: Number(row.cal100),
+      pro100: Number(row.pro100), fib100: Number(row.fib100), photo: row.photo
+    }));
+    return { allData, dayMeta, library };
+  } catch(e) {
+    console.warn("sbFetchAll failed", e);
+    return null;
+  }
+}
+
+async function fetchNutrition(food,amount,apiKey) {
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,messages:[{role:"user",content:`You are a Malaysian nutrition expert. Estimate nutrition for: "${amount} of ${food}". Return ONLY JSON: {"calories":<int>,"protein":<float>,"fiber":<float>,"note":"<optional>"} Adjust for Malaysian portions and modifiers.`}]})});
+  const d=await res.json(); const text=d.content?.map(b=>b.text||"").join("")||"";
+  try{const m=text.replace(/```json[\s\S]*?```/g,s=>s.replace(/```json|```/g,"")).match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);}catch{}
   return null;
 }
 
-// ── Tiny UI helpers ───────────────────────────────────────────
+// ── Small UI atoms ────────────────────────────────────────────
 function Pill({label,value,unit,accent,sub}) {
   return (
-    <div style={{flex:1,minWidth:72,padding:"10px 12px",borderRadius:12,background:T.white,border:`1px solid ${T.border}`,textAlign:"center"}}>
-      <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:1.2}}>{label}</div>
-      <div style={{fontSize:18,fontWeight:700,color:accent,fontFamily:"'Cormorant Garamond',serif",lineHeight:1.1,marginTop:2}}>
+    <div style={{flex:1,minWidth:70,padding:"10px 10px",borderRadius:12,background:T.white,border:`1px solid ${T.border}`,textAlign:"center"}}>
+      <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:1.1}}>{label}</div>
+      <div style={{fontSize:17,fontWeight:700,color:accent,fontFamily:"'Cormorant Garamond',serif",lineHeight:1.1,marginTop:2}}>
         {value}<span style={{fontSize:10,color:T.inkFaint,marginLeft:1}}>{unit}</span>
       </div>
       {sub&&<div style={{fontSize:9,color:T.inkFaint,marginTop:1}}>{sub}</div>}
@@ -134,19 +207,249 @@ function Pill({label,value,unit,accent,sub}) {
   );
 }
 
-function FInput({value,onChange,placeholder,style={},inputRef,type="text",step,min}) {
-  const [focused,setFocused] = useState(false);
-  return <input ref={inputRef} type={type} step={step} min={min} value={value} onChange={onChange} placeholder={placeholder}
-    style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${focused?T.matcha:T.border}`,background:T.cream,color:T.ink,fontSize:13,outline:"none",transition:"border .15s",...style}}
-    onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}/>;
+function FInput({value,onChange,placeholder,style={},inputRef,type="text",step,min,max}) {
+  const [foc,setFoc]=useState(false);
+  return <input ref={inputRef} type={type} step={step} min={min} max={max} value={value} onChange={onChange} placeholder={placeholder}
+    style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${foc?T.matcha:T.border}`,background:T.cream,color:T.ink,fontSize:13,outline:"none",transition:"border .15s",...style}}
+    onFocus={()=>setFoc(true)} onBlur={()=>setFoc(false)}/>;
 }
 
 function ModalSheet({children,onClose}) {
   return (
     <div className="modal-backdrop" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="modal-sheet">
-        <div className="modal-handle"/>
-        {children}
+      <div className="modal-sheet"><div className="modal-handle"/>{children}</div>
+    </div>
+  );
+}
+
+function ModalCenter({children,onClose}) {
+  return (
+    <div className="modal-center" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-card">{children}</div>
+    </div>
+  );
+}
+
+// ── Calendar / Date Picker ────────────────────────────────────
+function DatePickerModal({selected,allData,dayMeta,onSelect,onClose}) {
+  const today = new Date();
+  const [viewYear,setViewYear] = useState(new Date(selected+"T00:00:00").getFullYear());
+  const [viewMonth,setViewMonth] = useState(new Date(selected+"T00:00:00").getMonth());
+
+  function daysInMonth(y,m) { return new Date(y,m+1,0).getDate(); }
+  function firstDay(y,m) { return new Date(y,m,1).getDay(); }
+
+  const totalDays = daysInMonth(viewYear,viewMonth);
+  const startDow = firstDay(viewYear,viewMonth);
+  const cells = [];
+  for(let i=0;i<startDow;i++) cells.push(null);
+  for(let d=1;d<=totalDays;d++) cells.push(d);
+
+  function cellKey(d) { return `${viewYear}-${String(viewMonth+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+
+  function prevMonth() { if(viewMonth===0){setViewMonth(11);setViewYear(y=>y-1);}else setViewMonth(m=>m-1); }
+  function nextMonth() { if(viewMonth===11){setViewMonth(0);setViewYear(y=>y+1);}else setViewMonth(m=>m+1); }
+
+  const years = [];
+  for(let y=today.getFullYear()-3;y<=today.getFullYear();y++) years.push(y);
+
+  return (
+    <ModalSheet onClose={onClose}>
+      <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:4}}>Date Picker</div>
+      <div style={{fontSize:18,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:16}}>Choose a Date</div>
+
+      {/* Year + Month nav */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+        <button onClick={prevMonth} style={{width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+        <div style={{flex:1,display:"flex",gap:6}}>
+          <select value={viewMonth} onChange={e=>setViewMonth(+e.target.value)} style={{flex:1,padding:"6px 8px",borderRadius:8,border:`1px solid ${T.border}`,background:T.cream,color:T.ink,fontSize:12,fontWeight:600,outline:"none"}}>
+            {MONTHS.map((m,i)=><option key={i} value={i}>{m}</option>)}
+          </select>
+          <select value={viewYear} onChange={e=>setViewYear(+e.target.value)} style={{width:76,padding:"6px 8px",borderRadius:8,border:`1px solid ${T.border}`,background:T.cream,color:T.ink,fontSize:12,fontWeight:600,outline:"none"}}>
+            {years.map(y=><option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        <button onClick={nextMonth} style={{width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+      </div>
+
+      {/* Day headers */}
+      <div className="cal-grid" style={{marginBottom:4}}>
+        {DAYS.map(d=><div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:T.inkFaint,padding:"4px 0"}}>{d}</div>)}
+      </div>
+
+      {/* Day cells */}
+      <div className="cal-grid">
+        {cells.map((d,i)=>{
+          if(!d) return <div key={`e${i}`}/>;
+          const dk = cellKey(d);
+          const isSel = dk===selected;
+          const isTod = dk===toDateKey(today);
+          const hasData = allData[dk]?.length>0;
+          const isEnded = dayMeta[dk]?.ended;
+          const isFuture = new Date(dk+"T00:00:00") > today;
+          let cls = "cal-day";
+          if(isSel) cls+=" selected";
+          else if(isEnded) cls+=" ended";
+          else if(isTod) cls+=" today-cell";
+          if(hasData) cls+=" has-data";
+          return (
+            <button key={dk} className={cls} disabled={isFuture} onClick={()=>{onSelect(dk);onClose();}}
+              style={{position:"relative",color:isSel?"#fff":isTod&&!isSel?T.strawberry:isEnded&&!isSel?T.matcha:T.ink}}>
+              {d}
+              {hasData&&!isSel&&<div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",width:4,height:4,borderRadius:99,background:isEnded?T.matcha:T.strawberry}}/>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{display:"flex",gap:14,marginTop:14,fontSize:10,color:T.inkFaint}}>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:99,background:T.strawberry,display:"inline-block"}}/>Active day</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:99,background:T.matcha,display:"inline-block"}}/>Ended day</span>
+      </div>
+    </ModalSheet>
+  );
+}
+
+// ── End Day Summary Modal ─────────────────────────────────────
+function EndDaySummary({totals,date,onConfirm,onClose}) {
+  const deficit = MAINTENANCE - totals.cal;
+  return (
+    <ModalCenter onClose={onClose}>
+      <div style={{textAlign:"center",marginBottom:16}}>
+        <div style={{fontSize:32,marginBottom:8,animation:"confettiDrop .5s ease"}}>
+          {deficit>=0?"🎯":"⚠️"}
+        </div>
+        <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:4}}>Day Complete</div>
+        <div style={{fontSize:20,fontFamily:"'Cormorant Garamond',serif",fontWeight:600}}>{fmtShort(date)}</div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+        <div style={{padding:"12px",borderRadius:12,background:T.strawberryLight,textAlign:"center"}}>
+          <div style={{fontSize:9,fontWeight:700,color:T.strawberry,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>Total Calories</div>
+          <div style={{fontSize:24,fontWeight:700,color:T.strawberry,fontFamily:"'Cormorant Garamond',serif"}}>{totals.cal}</div>
+          <div style={{fontSize:9,color:T.strawberry,opacity:.7}}>kcal eaten</div>
+        </div>
+        <div style={{padding:"12px",borderRadius:12,background:deficit>=0?T.matchaLight:T.strawberryLight,textAlign:"center"}}>
+          <div style={{fontSize:9,fontWeight:700,color:deficit>=0?T.matcha:T.strawberry,textTransform:"uppercase",letterSpacing:.8,marginBottom:2}}>{deficit>=0?"Deficit":"Surplus"}</div>
+          <div style={{fontSize:24,fontWeight:700,color:deficit>=0?T.matcha:T.strawberry,fontFamily:"'Cormorant Garamond',serif"}}>{Math.abs(deficit)}</div>
+          <div style={{fontSize:9,color:deficit>=0?T.matcha:T.strawberry,opacity:.7}}>kcal {deficit>=0?"under":"over"}</div>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        <div style={{flex:1,padding:"10px",borderRadius:10,background:T.matchaLight,textAlign:"center"}}>
+          <div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8}}>Protein</div>
+          <div style={{fontSize:18,fontWeight:700,color:T.matcha,fontFamily:"'Cormorant Garamond',serif"}}>{totals.pro.toFixed(1)}g</div>
+        </div>
+        <div style={{flex:1,padding:"10px",borderRadius:10,background:T.matchaLight,textAlign:"center"}}>
+          <div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8}}>Fiber</div>
+          <div style={{fontSize:18,fontWeight:700,color:T.matcha,fontFamily:"'Cormorant Garamond',serif"}}>{totals.fib.toFixed(1)}g</div>
+        </div>
+        <div style={{flex:1,padding:"10px",borderRadius:10,background:T.paper,textAlign:"center"}}>
+          <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:.8}}>Goal</div>
+          <div style={{fontSize:18,fontWeight:700,color:T.inkLight,fontFamily:"'Cormorant Garamond',serif"}}>{MAINTENANCE}</div>
+        </div>
+      </div>
+
+      <div style={{fontSize:12,color:T.inkLight,textAlign:"center",marginBottom:16,lineHeight:1.6,background:T.paper,borderRadius:10,padding:"10px"}}>
+        {deficit>=200?"Great job! You're well within your calorie goal. 🌿":deficit>=0?"Nice — you hit close to your goal today! 🍓":"You went a little over today. No worries, tomorrow is a fresh start! ✨"}
+      </div>
+
+      <button onClick={onConfirm} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",background:T.matcha,color:T.white,fontSize:12,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:"pointer",marginBottom:8}}>
+        ✓ End Day
+      </button>
+      <button onClick={onClose} style={{width:"100%",padding:"9px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:11,fontWeight:600,cursor:"pointer"}}>
+        Cancel — keep logging
+      </button>
+    </ModalCenter>
+  );
+}
+
+// ── Edit Entry Modal ──────────────────────────────────────────
+function EditEntryModal({entry,onSave,onClose}) {
+  const [food,setFood] = useState(entry.food);
+  const [amount,setAmount] = useState(entry.amount);
+  const [cal,setCal] = useState(String(entry.calories));
+  const [pro,setPro] = useState(String(entry.protein));
+  const [fib,setFib] = useState(String(entry.fiber));
+  const [meal,setMeal] = useState(entry.meal);
+
+  function handleSave() {
+    if(!food.trim()||!cal) return;
+    onSave({...entry, food:food.trim(), amount:amount.trim(), calories:parseFloat(cal)||0, protein:parseFloat(pro)||0, fiber:parseFloat(fib)||0, meal});
+  }
+
+  return (
+    <ModalSheet onClose={onClose}>
+      <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:4}}>Edit Entry</div>
+      <div style={{fontSize:18,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:16}}>Edit Food Item</div>
+
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Food Name</div>
+        <FInput value={food} onChange={e=>setFood(e.target.value)} placeholder="Food name"/>
+      </div>
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Amount</div>
+        <FInput value={amount} onChange={e=>setAmount(e.target.value)} placeholder="e.g. 1 plate, 150g"/>
+      </div>
+
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Meal</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+          {MEAL_ORDER.map(m=>{
+            const mm=MEAL_META[m];
+            return <button key={m} onClick={()=>setMeal(m)} style={{padding:"8px",borderRadius:8,border:`1.5px solid ${meal===m?mm.color:T.border}`,background:meal===m?mm.light:T.paper,color:meal===m?mm.color:T.inkLight,fontWeight:600,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+              <span style={{color:mm.color}}>{mm.icon}</span>{m}
+            </button>;
+          })}
+        </div>
+      </div>
+
+      <div style={{background:T.matchaLight,borderRadius:10,padding:"12px",marginBottom:14,border:`1px solid ${T.matchaMid}`}}>
+        <div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Nutrition</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7}}>
+          <div><div style={{fontSize:9,fontWeight:700,color:T.strawberry,textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>Calories</div><FInput value={cal} onChange={e=>setCal(e.target.value)} placeholder="0" type="number" min="0" style={{padding:"7px 9px",fontSize:12}}/></div>
+          <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>Protein g</div><FInput value={pro} onChange={e=>setPro(e.target.value)} placeholder="0" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
+          <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>Fiber g</div><FInput value={fib} onChange={e=>setFib(e.target.value)} placeholder="0" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
+        </div>
+      </div>
+
+      <button onClick={handleSave} disabled={!food.trim()||!cal} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:(!food.trim()||!cal)?T.border:T.matcha,color:(!food.trim()||!cal)?T.inkFaint:T.white,fontSize:11,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:(!food.trim()||!cal)?"not-allowed":"pointer",marginBottom:8}}>Save Changes</button>
+      <button onClick={onClose} style={{width:"100%",padding:"9px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:11,cursor:"pointer"}}>Cancel</button>
+    </ModalSheet>
+  );
+}
+
+// ── User Gate (simple username login) ────────────────────────
+function UserGate({onLogin}) {
+  const [name,setName]=useState("");
+  const [loading,setLoading]=useState(false);
+  useEffect(()=>{ const u=localStorage.getItem("fd_userid"); if(u) onLogin(u); },[]);
+
+  function handleLogin(e){
+    e.preventDefault();
+    const trimmed=name.trim().toLowerCase().replace(/\s+/g,"-");
+    if(!trimmed) return;
+    setLoading(true);
+    localStorage.setItem("fd_userid", trimmed);
+    onLogin(trimmed);
+  }
+
+  return (
+    <div style={{position:"fixed",inset:0,background:T.cream,display:"flex",alignItems:"center",justifyContent:"center",padding:24,zIndex:9600}}>
+      <div style={{width:"100%",maxWidth:340,textAlign:"center"}}>
+        <div style={{fontSize:44,marginBottom:12}}>🍓🍵</div>
+        <div style={{fontSize:10,letterSpacing:3,textTransform:"uppercase",color:T.inkFaint,marginBottom:6}}>Food Diary</div>
+        <div style={{fontSize:26,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:6}}>Welcome back</div>
+        <p style={{fontSize:12,color:T.inkLight,lineHeight:1.7,marginBottom:24}}>Enter a username to sync your diary across all your devices. Use the same name on every device.</p>
+        <form onSubmit={handleLogin}>
+          <FInput value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. sarah, my-diary, fatimah" style={{marginBottom:10,textAlign:"center",fontSize:14}}/>
+          <div style={{fontSize:10,color:T.inkFaint,marginBottom:16,lineHeight:1.6}}>💡 No password needed — just remember your username. Use the same one on your phone and laptop.</div>
+          <button type="submit" disabled={!name.trim()||loading} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:(!name.trim()||loading)?T.border:T.matcha,color:(!name.trim()||loading)?T.inkFaint:T.white,fontSize:12,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:(!name.trim()||loading)?"not-allowed":"pointer"}}>
+            {loading?"Loading…":"Enter →"}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -156,402 +459,434 @@ function ModalSheet({children,onClose}) {
 function ApiKeyGate({onSave}) {
   const [key,setKey]=useState(""); const [show,setShow]=useState(false);
   useEffect(()=>{ const k=localStorage.getItem("fd_apikey"); if(k) onSave(k); },[]);
-  function save(e) { e.preventDefault(); if(!key.trim())return; localStorage.setItem("fd_apikey",key.trim()); onSave(key.trim()); }
+  function save(e){e.preventDefault();if(!key.trim())return;localStorage.setItem("fd_apikey",key.trim());onSave(key.trim());}
   if(localStorage.getItem("fd_apikey")) return null;
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(28,28,26,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9500,padding:20}}>
       <div style={{background:T.white,borderRadius:16,padding:24,width:"100%",maxWidth:360,border:`1px solid ${T.border}`}}>
         <div style={{fontSize:10,letterSpacing:2.5,textTransform:"uppercase",color:T.inkFaint,marginBottom:4}}>Setup</div>
-        <div style={{fontSize:20,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:10}}>Enter your API Key</div>
-        <p style={{fontSize:12,color:T.inkLight,lineHeight:1.7,marginBottom:16}}>
-          Needed for AI nutrition estimates. Get a free key at <a href="https://console.anthropic.com" target="_blank" style={{color:T.strawberry}}>console.anthropic.com</a>.
-          <br/>Your key is stored only on this device.
-        </p>
+        <div style={{fontSize:20,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:10}}>Enter API Key</div>
+        <p style={{fontSize:12,color:T.inkLight,lineHeight:1.7,marginBottom:16}}>For AI nutrition estimates. Get a free key at <a href="https://console.anthropic.com" target="_blank" style={{color:T.strawberry}}>console.anthropic.com</a>. Stored only on this device.</p>
         <form onSubmit={save}>
           <div style={{position:"relative",marginBottom:10}}>
             <FInput value={key} onChange={e=>setKey(e.target.value)} placeholder="sk-ant-..." type={show?"text":"password"} style={{paddingRight:44}}/>
             <button type="button" onClick={()=>setShow(s=>!s)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:T.inkFaint,cursor:"pointer",fontSize:11}}>{show?"hide":"show"}</button>
           </div>
-          <div style={{fontSize:11,color:T.inkFaint,marginBottom:14}}>💡 You can skip and use Manual or Library mode without an API key.</div>
+          <div style={{fontSize:11,color:T.inkFaint,marginBottom:14}}>💡 Skip to use Manual or Library mode without a key.</div>
           <button type="submit" style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:T.matcha,color:T.white,fontSize:11,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:"pointer",marginBottom:8}}>Save & Continue →</button>
-          <button type="button" onClick={()=>onSave("__manual__")} style={{width:"100%",padding:"9px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:11,fontWeight:600,cursor:"pointer"}}>Skip — manual mode only</button>
+          <button type="button" onClick={()=>onSave("__manual__")} style={{width:"100%",padding:"9px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:11,fontWeight:600,cursor:"pointer"}}>Skip — manual only</button>
         </form>
       </div>
     </div>
   );
 }
 
-// ── Food Library Screen ───────────────────────────────────────
+// ── Food Library ──────────────────────────────────────────────
 function FoodLibrary({library,onAdd,onDelete,onClose,onSelect}) {
-  const [view,setView] = useState("list"); // list | add
-  const [name,setName] = useState("");
-  const [barcode,setBarcode] = useState("");
-  const [cal100,setCal100] = useState("");
-  const [pro100,setPro100] = useState("");
-  const [fib100,setFib100] = useState("");
-  const [photo,setPhoto] = useState(null);
-  const [search,setSearch] = useState("");
-  const fileRef = useRef();
-
-  const filtered = library.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())||f.barcode?.includes(search));
-
-  function handlePhotoFile(e) {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => setPhoto(ev.target.result);
-    reader.readAsDataURL(file);
-  }
-
-  function handleSave() {
-    if(!name.trim()||!cal100) return;
-    onAdd({ id:Date.now().toString(), name:name.trim(), barcode:barcode.trim()||null, cal100:parseFloat(cal100), pro100:parseFloat(pro100)||0, fib100:parseFloat(fib100)||0, photo });
-    setName(""); setBarcode(""); setCal100(""); setPro100(""); setFib100(""); setPhoto(null); setView("list");
-  }
-
-  function openScanner() {
-    window._scanTarget = "library";
-    window._onScanResult = (code)=>{ setBarcode(code); };
-    startScanner();
-  }
+  const [view,setView]=useState("list");
+  const [name,setName]=useState(""); const [barcode,setBarcode]=useState(""); const [cal100,setCal100]=useState(""); const [pro100,setPro100]=useState(""); const [fib100,setFib100]=useState(""); const [photo,setPhoto]=useState(null); const [search,setSearch]=useState("");
+  const fileRef=useRef();
+  const filtered=library.filter(f=>f.name.toLowerCase().includes(search.toLowerCase())||f.barcode?.includes(search));
+  function handlePhotoFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>setPhoto(ev.target.result);r.readAsDataURL(f);}
+  function handleSave(){if(!name.trim()||!cal100)return;onAdd({id:Date.now().toString(),name:name.trim(),barcode:barcode.trim()||null,cal100:parseFloat(cal100),pro100:parseFloat(pro100)||0,fib100:parseFloat(fib100)||0,photo});setName("");setBarcode("");setCal100("");setPro100("");setFib100("");setPhoto(null);setView("list");}
+  function openScanner(){window._onScanResult=(code)=>setBarcode(code);startScanner();}
 
   return (
     <ModalSheet onClose={onClose}>
-      {view==="list" ? (
+      {view==="list"?(
         <>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <div>
-              <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:2}}>Food Library</div>
-              <div style={{fontSize:18,fontFamily:"'Cormorant Garamond',serif",fontWeight:600}}>Saved Foods</div>
-            </div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+            <div><div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:2}}>Food Library</div><div style={{fontSize:18,fontFamily:"'Cormorant Garamond',serif",fontWeight:600}}>Saved Foods</div></div>
             <button onClick={()=>setView("add")} style={{padding:"7px 14px",borderRadius:8,border:"none",background:T.matcha,color:T.white,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Add</button>
           </div>
-          <FInput value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name or barcode…" style={{marginBottom:12}}/>
-          {filtered.length===0 ? (
-            <div style={{textAlign:"center",padding:"40px 0",color:T.inkFaint}}>
-              <div style={{fontSize:28,marginBottom:8}}>📦</div>
-              <div style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase"}}>{search?"No results":"Library is empty"}</div>
-              <div style={{fontSize:11,marginTop:4}}>Tap + Add to save a food</div>
-            </div>
-          ) : filtered.map(food=>(
+          <FInput value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…" style={{marginBottom:12}}/>
+          {filtered.length===0?<div style={{textAlign:"center",padding:"36px 0",color:T.inkFaint}}><div style={{fontSize:24,marginBottom:6}}>📦</div><div style={{fontSize:11,letterSpacing:1.5,textTransform:"uppercase"}}>{search?"No results":"Library empty"}</div></div>
+          :filtered.map(food=>(
             <div key={food.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${T.border}`}}>
-              <div style={{width:40,height:40,borderRadius:8,background:T.paper,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                {food.photo ? <img src={food.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:18}}>🏷️</span>}
+              <div style={{width:38,height:38,borderRadius:8,background:T.paper,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                {food.photo?<img src={food.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>🏷️</span>}
               </div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{food.name}</div>
-                <div style={{fontSize:10,color:T.inkFaint}}>{food.cal100} kcal · {food.pro100}g P · {food.fib100}g F <span style={{color:T.inkFaint}}>per 100g</span></div>
-                {food.barcode&&<div style={{fontSize:9,color:T.inkFaint,marginTop:1}}>📊 {food.barcode}</div>}
+                <div style={{fontSize:10,color:T.inkFaint}}>{food.cal100} kcal · {food.pro100}g P · {food.fib100}g F per 100g</div>
               </div>
-              <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>onSelect(food)} style={{padding:"5px 12px",borderRadius:7,border:"none",background:T.matchaLight,color:T.matcha,fontSize:11,fontWeight:700,cursor:"pointer"}}>Log</button>
-                <button onClick={()=>onDelete(food.id)} style={{padding:"5px 8px",borderRadius:7,border:"none",background:T.strawberryLight,color:T.strawberry,fontSize:13,cursor:"pointer"}}>×</button>
-              </div>
+              <button onClick={()=>onSelect(food)} style={{padding:"5px 10px",borderRadius:7,border:"none",background:T.matchaLight,color:T.matcha,fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Log</button>
+              <button onClick={()=>onDelete(food.id)} style={{padding:"5px 8px",borderRadius:7,border:"none",background:T.strawberryLight,color:T.strawberry,fontSize:13,cursor:"pointer",flexShrink:0}}>×</button>
             </div>
           ))}
         </>
-      ) : (
+      ):(
         <>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-            <button onClick={()=>setView("list")} style={{background:"none",border:"none",color:T.inkLight,cursor:"pointer",fontSize:18,lineHeight:1,padding:"0 4px 0 0"}}>←</button>
-            <div>
-              <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint}}>Food Library</div>
-              <div style={{fontSize:18,fontFamily:"'Cormorant Garamond',serif",fontWeight:600}}>New Food</div>
-            </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+            <button onClick={()=>setView("list")} style={{background:"none",border:"none",color:T.inkLight,cursor:"pointer",fontSize:18,padding:"0 4px 0 0"}}>←</button>
+            <div><div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint}}>Food Library</div><div style={{fontSize:18,fontFamily:"'Cormorant Garamond',serif",fontWeight:600}}>New Food</div></div>
           </div>
-
-          {/* Photo */}
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.inkFaint,letterSpacing:.8,textTransform:"uppercase",marginBottom:6}}>Photo (optional)</div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>Photo (optional)</div>
             <div style={{display:"flex",gap:10,alignItems:"center"}}>
-              <div onClick={()=>fileRef.current.click()} style={{width:72,height:72,borderRadius:10,background:T.paper,border:`1.5px dashed ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",overflow:"hidden",flexShrink:0}}>
-                {photo ? <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/> : <span style={{fontSize:24}}>📷</span>}
+              <div onClick={()=>fileRef.current.click()} style={{width:64,height:64,borderRadius:10,background:T.paper,border:`1.5px dashed ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",overflow:"hidden",flexShrink:0}}>
+                {photo?<img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:22}}>📷</span>}
               </div>
-              <div style={{flex:1}}>
-                <button onClick={()=>fileRef.current.click()} style={{width:"100%",padding:"8px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:11,cursor:"pointer",marginBottom:6}}>
-                  📁 Choose photo or take a picture
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoFile} style={{display:"none"}}/>
-              </div>
+              <button onClick={()=>fileRef.current.click()} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:11,cursor:"pointer"}}>Choose or take photo</button>
+              <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoFile} style={{display:"none"}}/>
             </div>
           </div>
-
-          {/* Name */}
-          <div style={{marginBottom:10}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.ink,letterSpacing:.8,textTransform:"uppercase",marginBottom:4}}>Food Name *</div>
-            <FInput value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Gardenia Wholemeal Bread"/>
+          <div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.ink,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Food Name *</div><FInput value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Gardenia Wholemeal Bread"/></div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Barcode (optional)</div>
+            <div style={{display:"flex",gap:7}}><FInput value={barcode} onChange={e=>setBarcode(e.target.value)} placeholder="Scan or type" style={{flex:1}}/><button onClick={openScanner} style={{padding:"9px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.ink,fontSize:12,cursor:"pointer",fontWeight:600}}>📷</button></div>
           </div>
-
-          {/* Barcode */}
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.inkFaint,letterSpacing:.8,textTransform:"uppercase",marginBottom:4}}>Barcode (optional)</div>
-            <div style={{display:"flex",gap:7}}>
-              <FInput value={barcode} onChange={e=>setBarcode(e.target.value)} placeholder="Scan or type barcode" style={{flex:1}}/>
-              <button onClick={openScanner} style={{padding:"9px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.ink,fontSize:12,cursor:"pointer",flexShrink:0,fontWeight:600}}>
-                📷 Scan
-              </button>
+          <div style={{background:T.matchaLight,borderRadius:10,padding:"12px",marginBottom:14,border:`1px solid ${T.matchaMid}`}}>
+            <div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Nutrition per 100g *</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7}}>
+              <div><div style={{fontSize:9,fontWeight:700,color:T.strawberry,textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>Calories</div><FInput value={cal100} onChange={e=>setCal100(e.target.value)} placeholder="265" type="number" min="0" style={{padding:"7px 9px",fontSize:12}}/></div>
+              <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>Protein g</div><FInput value={pro100} onChange={e=>setPro100(e.target.value)} placeholder="8" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
+              <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>Fiber g</div><FInput value={fib100} onChange={e=>setFib100(e.target.value)} placeholder="3" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
             </div>
           </div>
-
-          {/* Per 100g nutrition */}
-          <div style={{background:T.matchaLight,borderRadius:10,padding:"12px 14px",marginBottom:14,border:`1px solid ${T.matchaMid}`}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.matcha,letterSpacing:.8,textTransform:"uppercase",marginBottom:10}}>Nutrition per 100g *</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-              <div>
-                <div style={{fontSize:9,fontWeight:700,color:T.strawberry,letterSpacing:.5,textTransform:"uppercase",marginBottom:3}}>Calories</div>
-                <FInput value={cal100} onChange={e=>setCal100(e.target.value)} placeholder="e.g. 265" type="number" min="0" style={{padding:"7px 9px",fontSize:12}}/>
-              </div>
-              <div>
-                <div style={{fontSize:9,fontWeight:700,color:T.matcha,letterSpacing:.5,textTransform:"uppercase",marginBottom:3}}>Protein g</div>
-                <FInput value={pro100} onChange={e=>setPro100(e.target.value)} placeholder="e.g. 8" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/>
-              </div>
-              <div>
-                <div style={{fontSize:9,fontWeight:700,color:T.matcha,letterSpacing:.5,textTransform:"uppercase",marginBottom:3}}>Fiber g</div>
-                <FInput value={fib100} onChange={e=>setFib100(e.target.value)} placeholder="e.g. 3" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/>
-              </div>
-            </div>
-          </div>
-
-          <button onClick={handleSave} disabled={!name.trim()||!cal100} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:(!name.trim()||!cal100)?T.border:T.matcha,color:(!name.trim()||!cal100)?T.inkFaint:T.white,fontSize:11,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:(!name.trim()||!cal100)?"not-allowed":"pointer"}}>
-            Save to Library
-          </button>
+          <button onClick={handleSave} disabled={!name.trim()||!cal100} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:(!name.trim()||!cal100)?T.border:T.matcha,color:(!name.trim()||!cal100)?T.inkFaint:T.white,fontSize:11,fontWeight:700,textTransform:"uppercase",cursor:(!name.trim()||!cal100)?"not-allowed":"pointer"}}>Save to Library</button>
         </>
       )}
     </ModalSheet>
   );
 }
 
-// ── Log-from-Library Modal ────────────────────────────────────
-function LogFromLibrary({food, onConfirm, onClose}) {
-  const [grams, setGrams] = useState("100");
-  const g = parseFloat(grams)||0;
-  const cal = Math.round(food.cal100 * g / 100);
-  const pro = (food.pro100 * g / 100).toFixed(1);
-  const fib = (food.fib100 * g / 100).toFixed(1);
-
+// ── Log from Library modal ────────────────────────────────────
+function LogFromLibrary({food,onConfirm,onClose}) {
+  const [grams,setGrams]=useState("100");
+  const g=parseFloat(grams)||0;
+  const cal=Math.round(food.cal100*g/100); const pro=(food.pro100*g/100).toFixed(1); const fib=(food.fib100*g/100).toFixed(1);
   return (
     <ModalSheet onClose={onClose}>
       <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:4}}>Log Food</div>
-      <div style={{fontSize:20,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:14}}>{food.name}</div>
-
-      {food.photo && <img src={food.photo} style={{width:"100%",height:120,objectFit:"cover",borderRadius:10,marginBottom:14}}/>}
-
-      <div style={{background:T.paper,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:11,color:T.inkFaint}}>
-        Per 100g: <span style={{color:T.strawberry,fontWeight:700}}>{food.cal100} kcal</span> · <span style={{color:T.matcha,fontWeight:700}}>{food.pro100}g P</span> · <span style={{color:T.matcha,fontWeight:700}}>{food.fib100}g F</span>
-      </div>
-
-      <div style={{marginBottom:14}}>
-        <div style={{fontSize:10,fontWeight:700,color:T.ink,letterSpacing:.8,textTransform:"uppercase",marginBottom:6}}>Amount (grams)</div>
-        <FInput value={grams} onChange={e=>setGrams(e.target.value)} placeholder="e.g. 150" type="number" min="1" step="1"/>
-      </div>
-
-      {g>0 && (
-        <div style={{display:"flex",gap:6,marginBottom:16}}>
-          <div style={{flex:1,textAlign:"center",padding:"10px",borderRadius:10,background:T.strawberryLight}}>
-            <div style={{fontSize:9,fontWeight:700,color:T.strawberry,textTransform:"uppercase",letterSpacing:.8}}>Calories</div>
-            <div style={{fontSize:20,fontWeight:700,color:T.strawberry,fontFamily:"'Cormorant Garamond',serif"}}>{cal}</div>
-          </div>
-          <div style={{flex:1,textAlign:"center",padding:"10px",borderRadius:10,background:T.matchaLight}}>
-            <div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8}}>Protein</div>
-            <div style={{fontSize:20,fontWeight:700,color:T.matcha,fontFamily:"'Cormorant Garamond',serif"}}>{pro}g</div>
-          </div>
-          <div style={{flex:1,textAlign:"center",padding:"10px",borderRadius:10,background:T.matchaLight}}>
-            <div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8}}>Fiber</div>
-            <div style={{fontSize:20,fontWeight:700,color:T.matcha,fontFamily:"'Cormorant Garamond',serif"}}>{fib}g</div>
-          </div>
-        </div>
-      )}
-
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        {MEAL_ORDER.map(m=>{
-          const mm=MEAL_META[m];
-          return (
-            <button key={m} onClick={()=>g>0&&onConfirm(m,{calories:cal,protein:parseFloat(pro),fiber:parseFloat(fib),amount:`${g}g`})}
-              style={{padding:"11px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.ink,fontWeight:600,fontSize:12,cursor:g>0?"pointer":"not-allowed",display:"flex",alignItems:"center",gap:7,opacity:g>0?1:.5}}
-              onMouseEnter={e=>{if(g>0){e.currentTarget.style.background=mm.light;e.currentTarget.style.borderColor=mm.color;}}}
-              onMouseLeave={e=>{e.currentTarget.style.background=T.paper;e.currentTarget.style.borderColor=T.border;}}>
-              <span style={{color:mm.color}}>{mm.icon}</span>{m}
-            </button>
-          );
-        })}
+      <div style={{fontSize:20,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:12}}>{food.name}</div>
+      {food.photo&&<img src={food.photo} style={{width:"100%",height:110,objectFit:"cover",borderRadius:10,marginBottom:12}}/>}
+      <div style={{background:T.paper,borderRadius:10,padding:"9px 12px",marginBottom:12,fontSize:11,color:T.inkFaint}}>Per 100g: <span style={{color:T.strawberry,fontWeight:700}}>{food.cal100} kcal</span> · <span style={{color:T.matcha,fontWeight:700}}>{food.pro100}g P</span> · <span style={{color:T.matcha,fontWeight:700}}>{food.fib100}g F</span></div>
+      <div style={{marginBottom:12}}><div style={{fontSize:9,fontWeight:700,color:T.ink,textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>Amount (grams)</div><FInput value={grams} onChange={e=>setGrams(e.target.value)} placeholder="e.g. 150" type="number" min="1" step="1"/></div>
+      {g>0&&<div style={{display:"flex",gap:6,marginBottom:14}}>
+        <div style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,background:T.strawberryLight}}><div style={{fontSize:9,fontWeight:700,color:T.strawberry,textTransform:"uppercase"}}>Cal</div><div style={{fontSize:19,fontWeight:700,color:T.strawberry,fontFamily:"'Cormorant Garamond',serif"}}>{cal}</div></div>
+        <div style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,background:T.matchaLight}}><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase"}}>Protein</div><div style={{fontSize:19,fontWeight:700,color:T.matcha,fontFamily:"'Cormorant Garamond',serif"}}>{pro}g</div></div>
+        <div style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,background:T.matchaLight}}><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase"}}>Fiber</div><div style={{fontSize:19,fontWeight:700,color:T.matcha,fontFamily:"'Cormorant Garamond',serif"}}>{fib}g</div></div>
+      </div>}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
+        {MEAL_ORDER.map(m=>{const mm=MEAL_META[m];return(
+          <button key={m} onClick={()=>g>0&&onConfirm(m,{calories:cal,protein:parseFloat(pro),fiber:parseFloat(fib),amount:`${g}g`})}
+            style={{padding:"10px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.ink,fontWeight:600,fontSize:12,cursor:g>0?"pointer":"not-allowed",display:"flex",alignItems:"center",gap:7,opacity:g>0?1:.5}}
+            onMouseEnter={e=>{if(g>0){e.currentTarget.style.background=mm.light;e.currentTarget.style.borderColor=mm.color;}}}
+            onMouseLeave={e=>{e.currentTarget.style.background=T.paper;e.currentTarget.style.borderColor=T.border;}}>
+            <span style={{color:mm.color}}>{mm.icon}</span>{m}
+          </button>
+        );})}
       </div>
     </ModalSheet>
   );
 }
 
-// ── Barcode scanner logic (global, not React) ─────────────────
-let codeReader = null;
-function startScanner() {
-  document.getElementById("scanner-overlay").classList.add("show");
-  const video = document.getElementById("scanner-video");
-  const result = document.getElementById("scan-result");
-  result.classList.remove("show");
+// ── Export / Import Backup ────────────────────────────────────
+function BackupModal({allData,dayMeta,library,onImport,onClose}) {
+  const [importErr,setImportErr]=useState("");
+  const [importOk,setImportOk]=useState(false);
+  const fileRef=useRef();
 
-  if(window.ZXing) {
-    codeReader = new ZXing.BrowserMultiFormatReader();
-    codeReader.decodeFromVideoDevice(null, video, (res, err) => {
-      if(res) {
-        const code = res.getText();
-        result.textContent = "✓ " + code;
-        result.classList.add("show");
-        if(window._onScanResult) window._onScanResult(code);
-        setTimeout(stopScanner, 900);
-      }
-    }).catch(()=>{});
-  } else {
-    // fallback: show manual input hint
-    document.getElementById("scan-hint").textContent = "Scanner unavailable — type barcode manually";
+  function handleExport(){
+    const payload={version:2,exportedAt:new Date().toISOString(),diary:allData,dayMeta,library};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=`food-diary-backup-${toDateKey(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
+
+  function handleImportFile(e){
+    const file=e.target.files[0]; if(!file)return;
+    setImportErr(""); setImportOk(false);
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        if(!data.diary) throw new Error("Invalid backup file.");
+        onImport(data);
+        setImportOk(true);
+      }catch(err){ setImportErr("Could not read file. Make sure it's a valid backup JSON."); }
+    };
+    reader.readAsText(file);
+  }
+
+  return (
+    <ModalSheet onClose={onClose}>
+      <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:4}}>Data</div>
+      <div style={{fontSize:18,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,marginBottom:6}}>Backup & Restore</div>
+      <p style={{fontSize:12,color:T.inkLight,lineHeight:1.7,marginBottom:16}}>
+        Export saves all your diary entries, food library, and settings as a <strong>.json</strong> file. Import it back anytime to restore your data — even on a new device or browser.
+      </p>
+
+      {/* Export */}
+      <div style={{background:T.matchaLight,borderRadius:12,padding:"14px",marginBottom:12,border:`1px solid ${T.matchaMid}`}}>
+        <div style={{fontSize:11,fontWeight:700,color:T.matcha,marginBottom:4}}>📤 Export (Backup)</div>
+        <div style={{fontSize:11,color:T.matcha,opacity:.8,lineHeight:1.6,marginBottom:10}}>
+          Downloads a backup file to your device. Do this regularly to keep your data safe.
+        </div>
+        <button onClick={handleExport} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:T.matcha,color:T.white,fontSize:11,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:"pointer"}}>
+          ⬇ Download Backup
+        </button>
+      </div>
+
+      {/* Import */}
+      <div style={{background:T.strawberryLight,borderRadius:12,padding:"14px",border:`1px solid ${T.strawberryMid}`}}>
+        <div style={{fontSize:11,fontWeight:700,color:T.strawberry,marginBottom:4}}>📥 Import (Restore)</div>
+        <div style={{fontSize:11,color:T.strawberry,opacity:.8,lineHeight:1.6,marginBottom:10}}>
+          ⚠️ This will <strong>merge</strong> the backup with your current data. Existing entries are kept.
+        </div>
+        <button onClick={()=>fileRef.current.click()} style={{width:"100%",padding:"10px",borderRadius:8,border:`1px solid ${T.strawberryMid}`,background:"transparent",color:T.strawberry,fontSize:11,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:"pointer"}}>
+          ⬆ Choose Backup File
+        </button>
+        <input ref={fileRef} type="file" accept=".json,application/json" onChange={handleImportFile} style={{display:"none"}}/>
+        {importErr&&<div style={{fontSize:11,color:T.strawberry,marginTop:8,fontWeight:600}}>⚠️ {importErr}</div>}
+        {importOk&&<div style={{fontSize:11,color:T.matcha,marginTop:8,fontWeight:600}}>✅ Data restored successfully!</div>}
+      </div>
+    </ModalSheet>
+  );
 }
-function stopScanner() {
-  if(codeReader) { try { codeReader.reset(); } catch {} codeReader=null; }
-  const video = document.getElementById("scanner-video");
-  if(video.srcObject) { video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
+
+// ── Scanner ───────────────────────────────────────────────────
+let codeReader=null;
+function startScanner(){
+  document.getElementById("scanner-overlay").classList.add("show");
+  const video=document.getElementById("scanner-video"); const result=document.getElementById("scan-result");
+  result.classList.remove("show");
+  if(window.ZXing){codeReader=new ZXing.BrowserMultiFormatReader();codeReader.decodeFromVideoDevice(null,video,(res)=>{if(res){const code=res.getText();result.textContent="✓ "+code;result.classList.add("show");if(window._onScanResult)window._onScanResult(code);setTimeout(stopScanner,900);}}).catch(()=>{});}
+  else document.getElementById("scan-hint").textContent="Scanner unavailable — type manually";
+}
+function stopScanner(){
+  if(codeReader){try{codeReader.reset();}catch{}codeReader=null;}
+  const v=document.getElementById("scanner-video");if(v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null;}
   document.getElementById("scanner-overlay").classList.remove("show");
 }
-document.getElementById("scan-close").addEventListener("click", stopScanner);
+document.getElementById("scan-close").addEventListener("click",stopScanner);
 
 // ── Main App ──────────────────────────────────────────────────
 function App() {
   const today = toDateKey(new Date());
-  const [apiKey,setApiKey] = useState(null);
-  const [tab,setTab] = useState("log");
-  const [selDate,setSelDate] = useState(today);
-  const [allData,setAllData] = useState(()=>ls("fd_diary",{}));
-  const [library,setLibrary] = useState(()=>ls("fd_library",[]));
+  const [userId,setUserId]=useState(null);
+  const [apiKey,setApiKey]=useState(null);
+  const [tab,setTab]=useState("log");
+  const [selDate,setSelDate]=useState(today);
+  const [allData,setAllData]=useState(()=>ls("fd_diary",{}));
+  const [dayMeta,setDayMeta]=useState(()=>ls("fd_daymeta",{}));
+  const [library,setLibrary]=useState(()=>ls("fd_library",[]));
+  const [syncing,setSyncing]=useState(false);
+  const [syncMsg,setSyncMsg]=useState("");
 
   // form
-  const [foodInput,setFoodInput] = useState("");
-  const [amtInput,setAmtInput] = useState("");
-  const [mode,setMode] = useState("ai");
-  const [manCal,setManCal] = useState(""); const [manPro,setManPro]=useState(""); const [manFib,setManFib]=useState("");
-  const [step,setStep] = useState("form");
-  const [pending,setPending] = useState(null);
-  const [note,setNote] = useState(""); const [err,setErr]=useState("");
-  const foodRef = useRef();
+  const [foodInput,setFoodInput]=useState(""); const [amtInput,setAmtInput]=useState(""); const [mode,setMode]=useState("ai");
+  const [manCal,setManCal]=useState(""); const [manPro,setManPro]=useState(""); const [manFib,setManFib]=useState("");
+  const [step,setStep]=useState("form"); const [pending,setPending]=useState(null);
+  const [note,setNote]=useState(""); const [err,setErr]=useState("");
+  const foodRef=useRef();
 
   // modals
-  const [showLibrary,setShowLibrary] = useState(false);
-  const [logFood,setLogFood] = useState(null); // food item from library to log
+  const [showLibrary,setShowLibrary]=useState(false);
+  const [logFood,setLogFood]=useState(null);
+  const [editEntry,setEditEntry]=useState(null);
+  const [showDatePicker,setShowDatePicker]=useState(false);
+  const [showEndDay,setShowEndDay]=useState(false);
+  const [showStartNew,setShowStartNew]=useState(false);
+  const [showBackup,setShowBackup]=useState(false);
 
   useEffect(()=>{ const k=localStorage.getItem("fd_apikey"); if(k) setApiKey(k); },[]);
   useEffect(()=>{ if(step==="form"&&foodRef.current) foodRef.current.focus(); },[step]);
 
-  function saveLibrary(lib) { setLibrary(lib); lsSet("fd_library",lib); }
-  function addToLibrary(food) { saveLibrary([...library, food]); }
-  function deleteFromLibrary(id) { saveLibrary(library.filter(f=>f.id!==id)); }
+  // ── Load from Supabase when user logs in ──────────────────
+  useEffect(()=>{
+    if(!userId) return;
+    setSyncing(true); setSyncMsg("Syncing…");
+    sbFetchAll(userId).then(remote=>{
+      if(remote){
+        // Merge remote with local — remote wins for existing keys
+        const mergedData = {...ls("fd_diary",{}), ...remote.allData};
+        const mergedMeta = {...ls("fd_daymeta",{}), ...remote.dayMeta};
+        // Merge library by id
+        const localLib = ls("fd_library",[]);
+        const remoteIds = new Set(remote.library.map(f=>f.id));
+        const localOnly = localLib.filter(f=>!remoteIds.has(f.id));
+        const mergedLib = [...remote.library, ...localOnly];
+        setAllData(mergedData); lsSet("fd_diary",mergedData);
+        setDayMeta(mergedMeta); lsSet("fd_daymeta",mergedMeta);
+        setLibrary(mergedLib); lsSet("fd_library",mergedLib);
+        setSyncMsg("✓ Synced");
+      } else {
+        setSyncMsg("Offline — using local data");
+      }
+      setSyncing(false);
+      setTimeout(()=>setSyncMsg(""),3000);
+    });
+  },[userId]);
 
-  const entries = allData[selDate]||[];
-  function setEntries(fn) {
-    const next = {...allData,[selDate]:typeof fn==="function"?fn(allData[selDate]||[]):fn};
-    setAllData(next); lsSet("fd_diary",next);
-  }
-  function addEntry(entry) { setEntries(p=>[...p,{id:Date.now(),...entry}]); }
-  function removeEntry(id) { setEntries(p=>p.filter(e=>e.id!==id)); }
-
-  const totals = entries.reduce((a,e)=>({cal:a.cal+e.calories,pro:a.pro+e.protein,fib:a.fib+e.fiber}),{cal:0,pro:0,fib:0});
-  const deficit = MAINTENANCE-totals.cal;
-  const pct = Math.min(100,Math.round(totals.cal/MAINTENANCE*100));
-  const grouped = MEAL_ORDER.reduce((a,m)=>{a[m]=entries.filter(e=>e.meal===m);return a},{});
-  const loggedDays = Object.keys(allData).filter(k=>allData[k]?.length>0).sort((a,b)=>b.localeCompare(a));
-  const readOnly = selDate!==today;
-  function getDayTotals(dk) { return (allData[dk]||[]).reduce((a,e)=>({cal:a.cal+e.calories,pro:a.pro+e.protein,fib:a.fib+e.fiber}),{cal:0,pro:0,fib:0}); }
-
-  function reset() { setPending(null);setFoodInput("");setAmtInput("");setManCal("");setManPro("");setManFib("");setStep("form"); }
-
-  function handleFormSubmit(e) {
-    e.preventDefault(); if(!foodInput.trim()) return; setErr("");
-    if(mode==="manual") {
-      const cal=parseFloat(manCal); if(!cal||isNaN(cal)){setErr("Please enter calories.");return;}
-      setPending({food:foodInput.trim(),amount:amtInput.trim()||"1 serving",calories:cal,protein:parseFloat(manPro)||0,fiber:parseFloat(manFib)||0,manual:true});
-    } else {
-      if(!apiKey||apiKey==="__manual__"){setErr("No API key. Use Manual mode or Library.");return;}
-      setPending({food:foodInput.trim(),amount:amtInput.trim()||"1 serving"});
+  // ── Auto midnight refresh ─────────────────────────────────
+  useEffect(()=>{
+    function scheduleRefresh(){
+      const now=new Date();
+      const msUntilMidnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5).getTime()-now.getTime();
+      return setTimeout(()=>{ setSelDate(toDateKey(new Date())); scheduleRefresh(); }, msUntilMidnight);
     }
+    const t=scheduleRefresh();
+    return ()=>clearTimeout(t);
+  },[]);
+
+  function saveLibrary(lib){setLibrary(lib);lsSet("fd_library",lib);}
+  function addToLibrary(item){saveLibrary([...library,item]); if(userId) sbPushLibraryItem(userId,item);}
+  function deleteFromLibrary(id){saveLibrary(library.filter(f=>f.id!==id)); if(userId) sbDeleteLibraryItem(userId,id);}
+
+  function saveDayMeta(meta){setDayMeta(meta);lsSet("fd_daymeta",meta);}
+
+  const entries=allData[selDate]||[];
+  function setEntries(fn){
+    const next={...allData,[selDate]:typeof fn==="function"?fn(allData[selDate]||[]):fn};
+    setAllData(next);lsSet("fd_diary",next);
+  }
+  function addEntry(e){
+    const entry={id:Date.now(),...e};
+    setEntries(p=>[...p,entry]);
+    if(userId) sbPushEntry(userId,selDate,entry);
+  }
+  function removeEntry(id){
+    setEntries(p=>p.filter(e=>e.id!==id));
+    if(userId) sbDeleteEntry(userId,id);
+  }
+  function updateEntry(updated){
+    setEntries(p=>p.map(e=>e.id===updated.id?updated:e));
+    if(userId) sbPushEntry(userId,selDate,updated);
+  }
+
+  const totals=entries.reduce((a,e)=>({cal:a.cal+e.calories,pro:a.pro+e.protein,fib:a.fib+e.fiber}),{cal:0,pro:0,fib:0});
+  const deficit=MAINTENANCE-totals.cal;
+  const pct=Math.min(100,Math.round(totals.cal/MAINTENANCE*100));
+  const grouped=MEAL_ORDER.reduce((a,m)=>{a[m]=entries.filter(e=>e.meal===m);return a},{});
+  const loggedDays=Object.keys(allData).filter(k=>allData[k]?.length>0).sort((a,b)=>b.localeCompare(a));
+  const isEnded=dayMeta[selDate]?.ended||false;
+  const isEditable=selDate===today||!isEnded; // can edit today or non-ended past days
+
+  function getDayTotals(dk){return(allData[dk]||[]).reduce((a,e)=>({cal:a.cal+e.calories,pro:a.pro+e.protein,fib:a.fib+e.fiber}),{cal:0,pro:0,fib:0});}
+
+  function reset(){setPending(null);setFoodInput("");setAmtInput("");setManCal("");setManPro("");setManFib("");setStep("form");}
+
+  function handleFormSubmit(e){
+    e.preventDefault();if(!foodInput.trim())return;setErr("");
+    if(mode==="manual"){const cal=parseFloat(manCal);if(!cal||isNaN(cal)){setErr("Please enter calories.");return;}setPending({food:foodInput.trim(),amount:amtInput.trim()||"1 serving",calories:cal,protein:parseFloat(manPro)||0,fiber:parseFloat(manFib)||0,manual:true});}
+    else{if(!apiKey||apiKey==="__manual__"){setErr("No API key. Use Manual mode or Library.");return;}setPending({food:foodInput.trim(),amount:amtInput.trim()||"1 serving"});}
     setStep("meal");
   }
 
-  async function handleMealPick(meal) {
-    setStep("loading"); setNote(""); setErr("");
-    if(pending.manual) {
-      addEntry({meal,food:pending.food,amount:pending.amount,calories:pending.calories,protein:pending.protein,fiber:pending.fiber});
-      reset();
-    } else {
-      try {
-        const d=await fetchNutrition(pending.food,pending.amount,apiKey);
-        if(!d) throw new Error();
-        addEntry({meal,food:pending.food,amount:pending.amount,calories:d.calories,protein:d.protein,fiber:d.fiber});
-        if(d.note) setNote(d.note);
-      } catch { setErr("Couldn't fetch nutrition. Try manual or library."); }
-      reset();
-    }
+  async function handleMealPick(meal){
+    setStep("loading");setNote("");setErr("");
+    if(pending.manual){addEntry({meal,food:pending.food,amount:pending.amount,calories:pending.calories,protein:pending.protein,fiber:pending.fiber});reset();}
+    else{try{const d=await fetchNutrition(pending.food,pending.amount,apiKey);if(!d)throw new Error();addEntry({meal,food:pending.food,amount:pending.amount,calories:d.calories,protein:d.protein,fiber:d.fiber});if(d.note)setNote(d.note);}catch{setErr("Couldn't fetch nutrition. Try manual or library.");}reset();}
   }
 
-  function handleLibraryLog(food) { setShowLibrary(false); setLogFood(food); }
-  function handleLibraryConfirm(meal, nutrition) {
-    addEntry({meal, food:logFood.name, amount:nutrition.amount, calories:nutrition.calories, protein:nutrition.protein, fiber:nutrition.fiber});
-    setLogFood(null);
-  }
+  function handleLibraryConfirm(meal,nutrition){addEntry({meal,food:logFood.name,amount:nutrition.amount,calories:nutrition.calories,protein:nutrition.protein,fiber:nutrition.fiber});setLogFood(null);}
 
-  // Scan to log — opens scanner, looks up barcode in library
-  function handleScanToLog() {
-    window._onScanResult = (code) => {
-      const found = library.find(f=>f.barcode===code);
-      if(found) { setTimeout(()=>{setLogFood(found);},500); }
-      else { setTimeout(()=>{ setFoodInput(code); setErr(`Barcode ${code} not in library. Add it first or log manually.`); },500); }
+  function handleScanToLog(){
+    window._onScanResult=(code)=>{
+      const found=library.find(f=>f.barcode===code);
+      if(found)setTimeout(()=>setLogFood(found),500);
+      else setTimeout(()=>{setFoodInput(code);setErr(`Barcode ${code} not in library. Add it first.`);},500);
     };
     startScanner();
   }
 
+  function confirmEndDay(){
+    const meta={...dayMeta,[selDate]:{ended:true}};
+    saveDayMeta(meta);
+    if(userId) sbPushDayMeta(userId,selDate,true);
+    setShowEndDay(false);
+  }
+
+  function confirmStartNewDay(){
+    setSelDate(today);
+    setShowStartNew(false);
+    setTab("log");
+  }
+
+  function reopenDay(){
+    const meta={...dayMeta,[selDate]:{ended:false}};
+    saveDayMeta(meta);
+    if(userId) sbPushDayMeta(userId,selDate,false);
+  }
+
+  function handleImport(data){
+    // Merge diary: imported entries take priority for days not yet in local
+    const merged={...data.diary,...allData};
+    // For days that exist in both, merge entries by id
+    Object.keys(data.diary).forEach(dk=>{
+      if(allData[dk]){
+        const existingIds=new Set(allData[dk].map(e=>e.id));
+        const newEntries=data.diary[dk].filter(e=>!existingIds.has(e.id));
+        merged[dk]=[...allData[dk],...newEntries];
+      }
+    });
+    setAllData(merged); lsSet("fd_diary",merged);
+    if(data.dayMeta){ const m={...data.dayMeta,...dayMeta}; setDayMeta(m); lsSet("fd_daymeta",m); }
+    if(data.library&&data.library.length>0){
+      const existingIds=new Set(library.map(f=>f.id));
+      const newFoods=data.library.filter(f=>!existingIds.has(f.id));
+      if(newFoods.length>0) saveLibrary([...library,...newFoods]);
+    }
+  }
+
+  if(!userId) return <UserGate onLogin={setUserId}/>;
   if(!apiKey) return <ApiKeyGate onSave={setApiKey}/>;
 
-  return (
-    <div style={{minHeight:"100vh",background:T.cream,paddingBottom:80}}>
+  const showAddForm = !isEnded && (selDate===today) && step==="form";
+  const canEndDay = selDate===today && !isEnded && entries.length>0;
+  const canStartNew = isToday(selDate) && isEnded;
 
-      {/* Header */}
-      <div style={{background:T.white,borderBottom:`1px solid ${T.border}`,paddingTop:`max(env(safe-area-inset-top,0px),16px)`,padding:`max(env(safe-area-inset-top,0px),16px) 18px 0`}}>
+  return (
+    <div style={{minHeight:"100vh",background:T.cream,paddingBottom:90}}>
+
+      {/* ── Header ── */}
+      <div style={{background:T.white,borderBottom:`1px solid ${T.border}`,paddingTop:`max(env(safe-area-inset-top,0px),16px)`,padding:`max(env(safe-area-inset-top,0px),14px) 16px 0`}}>
         <div style={{maxWidth:520,margin:"0 auto"}}>
-          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
             <div>
               <div style={{fontSize:10,letterSpacing:2.5,textTransform:"uppercase",color:T.inkFaint,fontWeight:600,marginBottom:2}}>Food Diary</div>
-              <div style={{fontSize:22,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,lineHeight:1}}>
+              <div style={{fontSize:21,fontFamily:"'Cormorant Garamond',serif",fontWeight:600,lineHeight:1}}>
                 {tab==="history"?"Past Logs":tab==="library"?"Library":isToday(selDate)?"Today":fmtShort(selDate)}
               </div>
               {tab==="log"&&<div style={{fontSize:10,color:T.inkFaint,marginTop:1}}>{fmtLong(selDate)}</div>}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <div style={{display:"flex",gap:3}}><div style={{width:6,height:6,borderRadius:99,background:T.strawberry,opacity:.8}}/><div style={{width:6,height:6,borderRadius:99,background:T.matcha,opacity:.8}}/></div>
-              {apiKey!=="__manual__"&&<button onClick={()=>{localStorage.removeItem("fd_apikey");setApiKey(null);}} style={{background:"none",border:`1px solid ${T.border}`,color:T.inkFaint,cursor:"pointer",fontSize:9,padding:"2px 7px",borderRadius:6,fontFamily:"'Instrument Sans',sans-serif"}}>Key</button>}
+              {tab==="log"&&<button onClick={()=>setShowDatePicker(true)} style={{padding:"6px 10px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.ink,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>📅 <span style={{fontSize:10}}>{fmtShort(selDate)}</span></button>}
+              <button onClick={()=>setShowBackup(true)} style={{padding:"6px 9px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.inkLight,fontSize:12,cursor:"pointer"}} title="Backup & Restore">💾</button>
+              <button onClick={()=>{localStorage.removeItem("fd_userid");setUserId(null);}} style={{padding:"5px 8px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.inkFaint,fontSize:9,fontWeight:700,cursor:"pointer",letterSpacing:.5,textTransform:"uppercase"}} title="Switch user">👤 {userId}</button>
             </div>
           </div>
           <div style={{display:"flex",borderTop:`1px solid ${T.border}`}}>
             {[["log","Log"],["history","History"],["library","Library"]].map(([v,l])=>(
-              <button key={v} onClick={()=>{setTab(v);if(v==="log")setSelDate(today);}} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",cursor:"pointer",fontSize:10,fontWeight:600,letterSpacing:.8,textTransform:"uppercase",color:tab===v?T.ink:T.inkFaint,borderBottom:tab===v?`2px solid ${T.strawberry}`:"2px solid transparent",transition:"all .15s"}}>
-                {l}
-              </button>
+              <button key={v} onClick={()=>{setTab(v);if(v==="log")setSelDate(today);}} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",cursor:"pointer",fontSize:10,fontWeight:600,letterSpacing:.8,textTransform:"uppercase",color:tab===v?T.ink:T.inkFaint,borderBottom:tab===v?`2px solid ${T.strawberry}`:"2px solid transparent",transition:"all .15s"}}>{l}</button>
             ))}
           </div>
         </div>
       </div>
 
+      {syncMsg&&<div style={{background:syncMsg.startsWith("✓")?T.matchaLight:T.paper,borderBottom:`1px solid ${T.border}`,padding:"6px 16px",textAlign:"center",fontSize:10,fontWeight:600,color:syncMsg.startsWith("✓")?T.matcha:T.inkFaint,letterSpacing:.5}}>{syncMsg}</div>}
+
       <div style={{maxWidth:520,margin:"0 auto",padding:"0 14px"}}>
 
         {/* ══ HISTORY ══ */}
         {tab==="history"&&(
-          <div style={{paddingTop:18}}>
-            {loggedDays.length===0?(
-              <div style={{textAlign:"center",padding:"60px 20px"}}>
-                <div style={{fontSize:28,marginBottom:8}}>📭</div>
-                <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint}}>No entries yet</div>
-              </div>
-            ):loggedDays.map(dk=>{
-              const dt=getDayTotals(dk); const def=MAINTENANCE-dt.cal; const cnt=(allData[dk]||[]).length;
-              return (
+          <div style={{paddingTop:16}}>
+            {loggedDays.length===0?<div style={{textAlign:"center",padding:"60px 20px"}}><div style={{fontSize:26,marginBottom:8}}>📭</div><div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint}}>No entries yet</div></div>
+            :loggedDays.map(dk=>{
+              const dt=getDayTotals(dk);const def=MAINTENANCE-dt.cal;const cnt=(allData[dk]||[]).length;const ended=dayMeta[dk]?.ended;
+              return(
                 <div key={dk} onClick={()=>{setSelDate(dk);setTab("log");}} style={{background:T.white,borderRadius:10,padding:"12px 14px",marginBottom:8,border:`1px solid ${isToday(dk)?T.strawberry:T.border}`,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
                   <div style={{flex:1}}>
-                    <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:2}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
                       <span style={{fontSize:13,fontWeight:600}}>{isToday(dk)?"Today":fmtShort(dk)}</span>
                       {isToday(dk)&&<span style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:99,background:T.strawberryLight,color:T.strawberry}}>TODAY</span>}
+                      {ended&&<span style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:99,background:T.matchaLight,color:T.matcha}}>ENDED</span>}
                     </div>
                     <div style={{fontSize:10,color:T.inkFaint}}>{fmtLong(dk)}</div>
                     <div style={{fontSize:10,color:T.inkFaint,marginTop:1}}>{cnt} item{cnt!==1?"s":""} · {dt.pro.toFixed(1)}g P · {dt.fib.toFixed(1)}g F</div>
@@ -566,59 +901,56 @@ function App() {
           </div>
         )}
 
-        {/* ══ LIBRARY TAB ══ */}
+        {/* ══ LIBRARY ══ */}
         {tab==="library"&&(
-          <div style={{paddingTop:18}}>
-            <div style={{display:"flex",gap:8,marginBottom:14}}>
-              <button onClick={()=>setShowLibrary(true)} style={{flex:1,padding:"11px",borderRadius:10,border:`1px solid ${T.border}`,background:T.white,color:T.ink,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                📦 Manage Library
-              </button>
-              <button onClick={handleScanToLog} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:T.matcha,color:T.white,fontSize:12,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                📷 Scan Barcode
-              </button>
+          <div style={{paddingTop:16}}>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <button onClick={()=>setShowLibrary(true)} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:T.white,color:T.ink,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>📦 Manage Library</button>
+              <button onClick={handleScanToLog} style={{flex:1,padding:"10px",borderRadius:10,border:"none",background:T.matcha,color:T.white,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>📷 Scan Barcode</button>
             </div>
-            <div style={{fontSize:11,color:T.inkFaint,lineHeight:1.7,background:T.paper,borderRadius:10,padding:"12px 14px",border:`1px solid ${T.border}`}}>
+            <div style={{fontSize:11,color:T.inkFaint,lineHeight:1.7,background:T.paper,borderRadius:10,padding:"11px 13px",border:`1px solid ${T.border}`,marginBottom:12}}>
               <strong style={{color:T.ink,fontSize:12}}>How it works</strong><br/>
-              1. Tap <strong>Manage Library</strong> → <strong>+ Add</strong><br/>
-              2. Take/choose a photo, enter the food name and its <strong>nutrition per 100g</strong> (from the label)<br/>
-              3. Optionally scan or enter the barcode<br/>
-              4. Next time, tap <strong>Scan Barcode</strong> to find it instantly, or tap <strong>Log</strong> next to any saved food, enter the weight in grams — nutrition is calculated automatically ✓
+              1. Add → take photo, name it, enter nutrition per 100g<br/>
+              2. Scan barcode to find it instantly next time<br/>
+              3. Enter grams — nutrition is calculated for you ✓
             </div>
-            {library.length>0&&(
-              <div style={{marginTop:14}}>
-                <div style={{fontSize:10,letterSpacing:1.5,textTransform:"uppercase",color:T.inkFaint,marginBottom:10}}>Quick Log</div>
-                {library.slice(0,6).map(food=>(
-                  <div key={food.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:`1px solid ${T.border}`}}>
-                    <div style={{width:36,height:36,borderRadius:7,background:T.paper,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      {food.photo?<img src={food.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>🏷️</span>}
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:12,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{food.name}</div>
-                      <div style={{fontSize:10,color:T.inkFaint}}>{food.cal100} kcal per 100g</div>
-                    </div>
-                    <button onClick={()=>setLogFood(food)} style={{padding:"5px 12px",borderRadius:7,border:"none",background:T.matchaLight,color:T.matcha,fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0}}>Log</button>
-                  </div>
-                ))}
+            {library.length>0&&library.map(food=>(
+              <div key={food.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:`1px solid ${T.border}`}}>
+                <div style={{width:36,height:36,borderRadius:7,background:T.paper,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {food.photo?<img src={food.photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:16}}>🏷️</span>}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{food.name}</div>
+                  <div style={{fontSize:10,color:T.inkFaint}}>{food.cal100} kcal per 100g</div>
+                </div>
+                <button onClick={()=>setLogFood(food)} style={{padding:"5px 11px",borderRadius:7,border:"none",background:T.matchaLight,color:T.matcha,fontSize:11,fontWeight:700,cursor:"pointer"}}>Log</button>
               </div>
-            )}
+            ))}
           </div>
         )}
 
         {/* ══ LOG ══ */}
         {tab==="log"&&(
           <>
-            {loggedDays.length>0&&(
-              <div style={{display:"flex",gap:5,paddingTop:12,overflowX:"auto",paddingBottom:2}}>
-                {!loggedDays.includes(today)&&<button onClick={()=>setSelDate(today)} style={{padding:"4px 11px",borderRadius:99,border:`1px solid ${selDate===today?T.strawberry:T.border}`,background:selDate===today?T.strawberryLight:"transparent",color:selDate===today?T.strawberry:T.inkLight,fontSize:10,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>Today</button>}
-                {loggedDays.map(dk=>(
-                  <button key={dk} onClick={()=>setSelDate(dk)} style={{padding:"4px 11px",borderRadius:99,border:`1px solid ${selDate===dk?T.strawberry:T.border}`,background:selDate===dk?T.strawberryLight:"transparent",color:selDate===dk?T.strawberry:T.inkLight,fontSize:10,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>
-                    {isToday(dk)?"Today":fmtShort(dk)}
-                  </button>
-                ))}
+            {/* Ended day banner */}
+            {isEnded&&(
+              <div style={{marginTop:12,padding:"10px 14px",borderRadius:10,background:T.matchaLight,border:`1px solid ${T.matchaMid}`,display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:14}}>✅</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:11,fontWeight:700,color:T.matcha}}>Day ended</div>
+                  <div style={{fontSize:10,color:T.matcha,opacity:.8}}>This day is locked. Tap reopen to edit.</div>
+                </div>
+                <button onClick={reopenDay} style={{padding:"5px 10px",borderRadius:7,border:`1px solid ${T.matchaMid}`,background:"transparent",color:T.matcha,fontSize:10,fontWeight:600,cursor:"pointer"}}>Reopen</button>
               </div>
             )}
 
-            {readOnly&&<div style={{marginTop:10,padding:"8px 12px",borderRadius:8,background:T.paper,border:`1px solid ${T.border}`,fontSize:11,color:T.inkLight,display:"flex",alignItems:"center",gap:6}}>📖 Viewing past log · <button onClick={()=>setSelDate(today)} style={{background:"none",border:"none",color:T.strawberry,fontWeight:600,cursor:"pointer",fontSize:11,padding:0}}>Back to today</button></div>}
+            {/* Past day (not today, not ended) */}
+            {selDate!==today&&!isEnded&&(
+              <div style={{marginTop:12,padding:"8px 12px",borderRadius:8,background:T.paper,border:`1px solid ${T.border}`,fontSize:11,color:T.inkLight,display:"flex",alignItems:"center",gap:6}}>
+                📖 Viewing past log ·
+                <button onClick={()=>setSelDate(today)} style={{background:"none",border:"none",color:T.strawberry,fontWeight:600,cursor:"pointer",fontSize:11,padding:0}}>Back to today</button>
+              </div>
+            )}
 
             {/* Stats */}
             <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
@@ -631,11 +963,11 @@ function App() {
               <div style={{height:"100%",width:`${pct}%`,borderRadius:99,background:pct>=100?T.strawberry:`linear-gradient(90deg,${T.matchaMid},${T.strawberryMid})`,transition:"width .5s"}}/>
             </div>
 
-            {/* Add form */}
-            {!readOnly&&step==="form"&&(
+            {/* Add form — only today, not ended */}
+            {showAddForm&&(
               <div style={{marginTop:14,background:T.white,borderRadius:12,border:`1px solid ${T.border}`,overflow:"hidden"}}>
-                <div style={{padding:"13px 14px 12px",borderBottom:`1px solid ${T.border}`}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{padding:"12px 14px 11px",borderBottom:`1px solid ${T.border}`}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:9}}>
                     <span style={{fontSize:10,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",color:T.inkLight}}>Add food</span>
                     <div style={{display:"flex",background:T.paper,borderRadius:99,padding:2,border:`1px solid ${T.border}`}}>
                       {[["ai","AI"],["manual","Manual"]].map(([v,l])=>(
@@ -644,15 +976,15 @@ function App() {
                     </div>
                   </div>
                   <form onSubmit={handleFormSubmit}>
-                    <div style={{display:"flex",gap:7,marginBottom:mode==="manual"?8:10}}>
+                    <div style={{display:"flex",gap:7,marginBottom:mode==="manual"?8:9}}>
                       <FInput inputRef={foodRef} value={foodInput} onChange={e=>setFoodInput(e.target.value)} placeholder="Food item, e.g. nasi lemak" style={{flex:1}}/>
-                      <FInput value={amtInput} onChange={e=>setAmtInput(e.target.value)} placeholder="Amount" style={{width:90}}/>
+                      <FInput value={amtInput} onChange={e=>setAmtInput(e.target.value)} placeholder="Amount" style={{width:88}}/>
                     </div>
                     {mode==="manual"&&(
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:10}}>
-                        <div><div style={{fontSize:9,fontWeight:700,color:T.strawberry,letterSpacing:.8,textTransform:"uppercase",marginBottom:3}}>Calories *</div><FInput value={manCal} onChange={e=>setManCal(e.target.value)} placeholder="350" type="number" min="0" style={{padding:"7px 9px",fontSize:12}}/></div>
-                        <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,letterSpacing:.8,textTransform:"uppercase",marginBottom:3}}>Protein g</div><FInput value={manPro} onChange={e=>setManPro(e.target.value)} placeholder="12" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
-                        <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,letterSpacing:.8,textTransform:"uppercase",marginBottom:3}}>Fiber g</div><FInput value={manFib} onChange={e=>setManFib(e.target.value)} placeholder="2.5" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:9}}>
+                        <div><div style={{fontSize:9,fontWeight:700,color:T.strawberry,textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Calories *</div><FInput value={manCal} onChange={e=>setManCal(e.target.value)} placeholder="350" type="number" min="0" style={{padding:"7px 9px",fontSize:12}}/></div>
+                        <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Protein g</div><FInput value={manPro} onChange={e=>setManPro(e.target.value)} placeholder="12" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
+                        <div><div style={{fontSize:9,fontWeight:700,color:T.matcha,textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Fiber g</div><FInput value={manFib} onChange={e=>setManFib(e.target.value)} placeholder="2.5" type="number" min="0" step="0.1" style={{padding:"7px 9px",fontSize:12}}/></div>
                       </div>
                     )}
                     {err&&<div style={{fontSize:11,color:T.strawberry,marginBottom:8}}>{err}</div>}
@@ -661,38 +993,33 @@ function App() {
                     </button>
                   </form>
                 </div>
-                <div style={{padding:"9px 14px 10px",display:"flex",flexWrap:"wrap",gap:4,borderBottom:`1px solid ${T.border}`}}>
+                <div style={{padding:"8px 14px 9px",display:"flex",flexWrap:"wrap",gap:4,borderBottom:library.length>0?`1px solid ${T.border}`:"none"}}>
                   {QUICK_FOODS.map(f=><button key={f} onClick={()=>setFoodInput(f)} style={{padding:"3px 8px",borderRadius:99,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:10,cursor:"pointer",fontWeight:500}}>{f}</button>)}
                 </div>
-                {/* Library quick buttons */}
                 {library.length>0&&(
-                  <div style={{padding:"9px 14px",display:"flex",gap:5,overflowX:"auto"}}>
+                  <div style={{padding:"8px 14px",display:"flex",gap:5,overflowX:"auto"}}>
                     <span style={{fontSize:9,fontWeight:700,color:T.inkFaint,textTransform:"uppercase",letterSpacing:.8,whiteSpace:"nowrap",alignSelf:"center",marginRight:2}}>Library:</span>
-                    {library.map(f=>(
-                      <button key={f.id} onClick={()=>setLogFood(f)} style={{padding:"3px 10px",borderRadius:99,border:`1px solid ${T.matchaMid}`,background:T.matchaLight,color:T.matcha,fontSize:10,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>
-                        {f.name}
-                      </button>
-                    ))}
+                    {library.map(f=><button key={f.id} onClick={()=>setLogFood(f)} style={{padding:"3px 9px",borderRadius:99,border:`1px solid ${T.matchaMid}`,background:T.matchaLight,color:T.matcha,fontSize:10,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>{f.name}</button>)}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Scan button */}
-            {!readOnly&&step==="form"&&(
-              <button onClick={handleScanToLog} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:10,border:`1px solid ${T.border}`,background:T.white,color:T.ink,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
-                <span style={{fontSize:15}}>📷</span> Scan Barcode to Log
+            {/* Scan */}
+            {showAddForm&&(
+              <button onClick={handleScanToLog} style={{width:"100%",marginTop:7,padding:"9px",borderRadius:10,border:`1px solid ${T.border}`,background:T.white,color:T.ink,fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <span style={{fontSize:14}}>📷</span> Scan Barcode to Log
               </button>
             )}
 
             {/* Meal picker */}
-            {!readOnly&&step==="meal"&&pending&&(
-              <div style={{marginTop:12,background:T.white,borderRadius:12,border:`1px solid ${T.border}`,padding:"14px"}}>
+            {selDate===today&&!isEnded&&step==="meal"&&pending&&(
+              <div style={{marginTop:12,background:T.white,borderRadius:12,border:`1px solid ${T.border}`,padding:"13px"}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",color:T.inkLight,marginBottom:4}}>Choose meal</div>
-                <div style={{fontSize:11,color:T.inkFaint,marginBottom:12,fontStyle:"italic"}}>{pending.amount} · {pending.food}</div>
+                <div style={{fontSize:11,color:T.inkFaint,marginBottom:11,fontStyle:"italic"}}>{pending.amount} · {pending.food}</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
                   {MEAL_ORDER.map(m=>{const mm=MEAL_META[m];return(
-                    <button key={m} onClick={()=>handleMealPick(m)} style={{padding:"11px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.ink,fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:7,transition:"all .12s"}}
+                    <button key={m} onClick={()=>handleMealPick(m)} style={{padding:"10px",borderRadius:8,border:`1px solid ${T.border}`,background:T.paper,color:T.ink,fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:7,transition:"all .12s"}}
                     onMouseEnter={e=>{e.currentTarget.style.background=mm.light;e.currentTarget.style.borderColor=mm.color;}}
                     onMouseLeave={e=>{e.currentTarget.style.background=T.paper;e.currentTarget.style.borderColor=T.border;}}>
                       <span style={{color:mm.color}}>{mm.icon}</span>{m}
@@ -704,25 +1031,20 @@ function App() {
             )}
 
             {/* Loading */}
-            {!readOnly&&step==="loading"&&(
-              <div style={{marginTop:12,background:T.white,borderRadius:12,border:`1px solid ${T.border}`,padding:"26px 20px",textAlign:"center"}}>
-                <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.matcha,fontWeight:600}}>Calculating…</div>
-                <div style={{fontSize:10,color:T.inkFaint,marginTop:4}}>Adjusting for Malaysian portions</div>
-              </div>
-            )}
+            {step==="loading"&&<div style={{marginTop:12,background:T.white,borderRadius:12,border:`1px solid ${T.border}`,padding:"24px 20px",textAlign:"center"}}><div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.matcha,fontWeight:600}}>Calculating…</div><div style={{fontSize:10,color:T.inkFaint,marginTop:4}}>Adjusting for Malaysian portions</div></div>}
 
             {note&&<div style={{marginTop:9,padding:"7px 11px",borderRadius:8,background:T.matchaLight,border:`1px solid ${T.matchaMid}`,fontSize:11,color:T.matcha}}>💡 {note}</div>}
 
-            {/* Food log table */}
+            {/* Food log */}
             {entries.length>0&&(
-              <div style={{marginTop:16,marginBottom:24}}>
+              <div style={{marginTop:14,marginBottom:16}}>
                 {MEAL_ORDER.map(meal=>{
-                  const rows=grouped[meal]; if(!rows.length) return null;
+                  const rows=grouped[meal];if(!rows.length)return null;
                   const mm=MEAL_META[meal];
                   const mt=rows.reduce((a,e)=>({cal:a.cal+e.calories,pro:a.pro+e.protein,fib:a.fib+e.fiber}),{cal:0,pro:0,fib:0});
-                  return (
+                  return(
                     <div key={meal} style={{marginBottom:10,background:T.white,borderRadius:10,border:`1px solid ${T.border}`,overflow:"hidden"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:7,padding:"9px 13px",borderBottom:`1px solid ${T.border}`,background:mm.light}}>
+                      <div style={{display:"flex",alignItems:"center",gap:7,padding:"8px 13px",borderBottom:`1px solid ${T.border}`,background:mm.light}}>
                         <span style={{color:mm.color,fontSize:12}}>{mm.icon}</span>
                         <span style={{fontWeight:600,fontSize:11}}>{meal}</span>
                         <span style={{marginLeft:"auto",fontSize:9,color:T.inkFaint}}>{mt.cal} kcal · {mt.pro.toFixed(1)}g P · {mt.fib.toFixed(1)}g F</span>
@@ -735,11 +1057,18 @@ function App() {
                               <div style={{fontSize:12,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{entry.food}</div>
                               <div style={{fontSize:10,color:T.inkFaint,marginTop:1}}>{entry.amount}</div>
                             </div>
-                            <div style={{display:"flex",gap:10,alignItems:"center",flexShrink:0}}>
+                            <div style={{display:"flex",gap:9,alignItems:"center",flexShrink:0}}>
                               <div style={{fontSize:12,fontWeight:700,color:T.strawberry,fontFamily:"'Cormorant Garamond',serif"}}>{entry.calories}<span style={{fontSize:9,color:T.inkFaint,marginLeft:1}}>kcal</span></div>
-                              <div style={{textAlign:"right",minWidth:34}}><div style={{fontSize:10,color:T.matcha,fontWeight:600}}>{entry.protein.toFixed(1)}g</div><div style={{fontSize:9,color:T.inkFaint}}>prot</div></div>
-                              <div style={{textAlign:"right",minWidth:30}}><div style={{fontSize:10,color:T.matcha,fontWeight:600}}>{entry.fiber.toFixed(1)}g</div><div style={{fontSize:9,color:T.inkFaint}}>fiber</div></div>
-                              {!readOnly&&<button onClick={()=>removeEntry(entry.id)} style={{background:"none",border:"none",color:T.inkFaint,cursor:"pointer",fontSize:15,padding:"0 2px",lineHeight:1}} onMouseEnter={e=>e.currentTarget.style.color=T.strawberry} onMouseLeave={e=>e.currentTarget.style.color=T.inkFaint}>×</button>}
+                              <div style={{textAlign:"right",minWidth:32}}><div style={{fontSize:10,color:T.matcha,fontWeight:600}}>{entry.protein.toFixed(1)}g</div><div style={{fontSize:9,color:T.inkFaint}}>prot</div></div>
+                              <div style={{textAlign:"right",minWidth:28}}><div style={{fontSize:10,color:T.matcha,fontWeight:600}}>{entry.fiber.toFixed(1)}g</div><div style={{fontSize:9,color:T.inkFaint}}>fiber</div></div>
+                              {!isEnded&&(
+                                <div style={{display:"flex",gap:4}}>
+                                  <button onClick={()=>setEditEntry(entry)} style={{background:"none",border:"none",color:T.inkFaint,cursor:"pointer",fontSize:12,padding:"1px 3px"}} title="Edit"
+                                    onMouseEnter={e=>e.currentTarget.style.color=T.matcha} onMouseLeave={e=>e.currentTarget.style.color=T.inkFaint}>✎</button>
+                                  <button onClick={()=>removeEntry(entry.id)} style={{background:"none",border:"none",color:T.inkFaint,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Delete"
+                                    onMouseEnter={e=>e.currentTarget.style.color=T.strawberry} onMouseLeave={e=>e.currentTarget.style.color=T.inkFaint}>×</button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -747,6 +1076,8 @@ function App() {
                     </div>
                   );
                 })}
+
+                {/* Daily total */}
                 <div style={{background:T.ink,borderRadius:10,padding:"11px 15px",display:"flex",flexWrap:"wrap",gap:10,alignItems:"center"}}>
                   <span style={{fontSize:10,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",color:"#ffffff66",flex:1}}>Daily Total</span>
                   <span style={{fontSize:11,color:T.strawberryMid,fontWeight:600}}>🔥 {totals.cal} kcal</span>
@@ -757,21 +1088,51 @@ function App() {
               </div>
             )}
 
-            {entries.length===0&&step==="form"&&(
-              <div style={{textAlign:"center",padding:"50px 20px"}}>
-                <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint}}>{readOnly?"Nothing logged this day":"Start logging"}</div>
-                {!readOnly&&<div style={{fontSize:11,color:T.inkFaint,marginTop:4}}>Add a meal above or scan a barcode</div>}
+            {entries.length===0&&step==="form"&&!isEnded&&(
+              <div style={{textAlign:"center",padding:"44px 20px"}}>
+                <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint}}>{selDate!==today?"Nothing logged this day":"Start logging"}</div>
+                {selDate===today&&<div style={{fontSize:11,color:T.inkFaint,marginTop:4}}>Add a meal above or scan a barcode</div>}
+              </div>
+            )}
+
+            {/* ── End Day / Start New Day buttons ── */}
+            {selDate===today&&(
+              <div style={{marginTop:6,marginBottom:8}}>
+                {!isEnded&&entries.length>0&&(
+                  <button onClick={()=>setShowEndDay(true)} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:T.strawberry,color:T.white,fontSize:12,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7,marginBottom:8}}>
+                    🏁 End Day
+                  </button>
+                )}
+                {isEnded&&(
+                  <button onClick={()=>setShowStartNew(true)} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:T.matcha,color:T.white,fontSize:12,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+                    🌅 Start New Day
+                  </button>
+                )}
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* Library modal */}
-      {showLibrary&&<FoodLibrary library={library} onAdd={addToLibrary} onDelete={deleteFromLibrary} onClose={()=>setShowLibrary(false)} onSelect={handleLibraryLog}/>}
-
-      {/* Log-from-library modal */}
+      {/* ── Modals ── */}
+      {showDatePicker&&<DatePickerModal selected={selDate} allData={allData} dayMeta={dayMeta} onSelect={setSelDate} onClose={()=>setShowDatePicker(false)}/>}
+      {showEndDay&&<EndDaySummary totals={totals} date={selDate} onConfirm={confirmEndDay} onClose={()=>setShowEndDay(false)}/>}
+      {showBackup&&<BackupModal allData={allData} dayMeta={dayMeta} library={library} onImport={handleImport} onClose={()=>setShowBackup(false)}/>}
+      {showStartNew&&(
+        <ModalCenter onClose={()=>setShowStartNew(false)}>
+          <div style={{textAlign:"center",marginBottom:16}}>
+            <div style={{fontSize:32,marginBottom:8}}>🌅</div>
+            <div style={{fontSize:10,letterSpacing:2,textTransform:"uppercase",color:T.inkFaint,marginBottom:4}}>New Day</div>
+            <div style={{fontSize:20,fontFamily:"'Cormorant Garamond',serif",fontWeight:600}}>Ready to start fresh?</div>
+            <div style={{fontSize:12,color:T.inkLight,marginTop:8,lineHeight:1.6}}>Your previous day is saved and you can review it anytime in History.</div>
+          </div>
+          <button onClick={confirmStartNewDay} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",background:T.matcha,color:T.white,fontSize:12,fontWeight:700,letterSpacing:.5,textTransform:"uppercase",cursor:"pointer",marginBottom:8}}>🌿 Begin Today's Log</button>
+          <button onClick={()=>setShowStartNew(false)} style={{width:"100%",padding:"9px",borderRadius:10,border:`1px solid ${T.border}`,background:"transparent",color:T.inkLight,fontSize:11,cursor:"pointer"}}>Cancel</button>
+        </ModalCenter>
+      )}
+      {showLibrary&&<FoodLibrary library={library} onAdd={addToLibrary} onDelete={deleteFromLibrary} onClose={()=>setShowLibrary(false)} onSelect={(f)=>{setShowLibrary(false);setLogFood(f);}}/>}
       {logFood&&<LogFromLibrary food={logFood} onConfirm={handleLibraryConfirm} onClose={()=>setLogFood(null)}/>}
+      {editEntry&&<EditEntryModal entry={editEntry} onSave={(updated)=>{updateEntry(updated);setEditEntry(null);}} onClose={()=>setEditEntry(null)}/>}
     </div>
   );
 }
@@ -780,17 +1141,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 
 <script>
-  // PWA install
   let deferredPrompt;
-  window.addEventListener("beforeinstallprompt",(e)=>{ e.preventDefault(); deferredPrompt=e; document.getElementById("install-banner").classList.add("show"); });
-  document.getElementById("install-btn").addEventListener("click",async()=>{ if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;} document.getElementById("install-banner").classList.remove("show"); });
+  window.addEventListener("beforeinstallprompt",(e)=>{e.preventDefault();deferredPrompt=e;document.getElementById("install-banner").classList.add("show");});
+  document.getElementById("install-btn").addEventListener("click",async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;}document.getElementById("install-banner").classList.remove("show");});
   document.getElementById("dismiss-btn").addEventListener("click",()=>document.getElementById("install-banner").classList.remove("show"));
-
-  // Service worker for offline
-  if("serviceWorker" in navigator) {
-    const sw=`const C="fd-v1",A=[self.location.pathname];self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A))));self.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(e.request)))));`;
-    navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:"application/javascript"}))).catch(()=>{});
-  }
+  if("serviceWorker" in navigator){const sw=`const C="fd-v2",A=[self.location.pathname];self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A))));self.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(e.request)))));`;navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:"application/javascript"}))).catch(()=>{});}
 </script>
 </body>
 </html>
